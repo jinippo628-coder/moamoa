@@ -243,11 +243,14 @@
 
   /* Bomb target range highlight (4×4 preview follows the finger / mouse) */
   .cell.bomb-target {
-    background: rgba(255, 88, 60, 0.3) !important;
     outline: 2px solid #ff5a3c;
     outline-offset: -2px;
     z-index: 2;
     animation: bombTargetPulse 0.9s ease-in-out infinite;
+  }
+  /* 빈 칸만 주황빛으로 칠해, 범위 안에 이미 놓인 블록 색은 그대로 보이게 한다 */
+  .cell.bomb-target:not(.filled) {
+    background: rgba(255, 88, 60, 0.32) !important;
   }
   @keyframes bombTargetPulse {
     0%, 100% { box-shadow: inset 0 0 6px rgba(255, 150, 90, 0.55), 0 0 3px rgba(255, 90, 60, 0.45); }
