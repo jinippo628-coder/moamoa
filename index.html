@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="규다미 뫄뫄💜">
 <meta name="theme-color" content="#0f131d">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
-<title>규다미 전용 뫄뫄💜 v2.4</title>
+<title>규다미 전용 뫄뫄💜 v2.5</title>
 <style>
 
     :root {
@@ -142,13 +142,13 @@
     transform: scale(0.92);
   }
 
-  /* Sub Bar (Stage, Abilities) */
+  /* Sub Bar (Stage, Gauge, Abilities) */
   .status-bar {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    gap: 4px;
     height: 28px;
     flex-shrink: 0;
   }
@@ -157,23 +157,31 @@
     background: var(--bg-card-sub);
     border: 1px solid var(--border-line);
     border-radius: 6px;
-    padding: 2px 6px;
+    padding: 2px 5px;
     font-size: 10px;
     font-weight: 700;
     color: var(--accent-gold);
     flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .gauge-wrap {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 2.5px;
     flex-shrink: 0;
   }
 
+  .gauge-label {
+    font-size: 9px;
+    color: var(--text-sub);
+    letter-spacing: -0.4px;
+    margin-right: 0.5px;
+  }
+
   .gauge-dot {
-    width: 6px;
-    height: 6px;
+    width: 5.5px;
+    height: 5.5px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.15);
     transition: all 0.2s ease;
@@ -185,21 +193,27 @@
 
   .abilities-wrap {
     display: flex;
-    gap: 5px;
+    align-items: center;
+    gap: 3.5px;
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
   .ability-btn {
     background: var(--bg-card);
     border: 1px solid var(--border-line);
     border-radius: 6px;
-    padding: 2px 7px;
-    font-size: 10.5px;
+    padding: 2px 4.5px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--text-main);
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1.25;
     touch-action: manipulation;
   }
   .ability-btn.active {
@@ -207,6 +221,12 @@
     background: rgba(246, 200, 76, 0.25);
     color: var(--accent-gold);
     box-shadow: 0 0 8px rgba(246, 200, 76, 0.4);
+  }
+  .ability-btn.bomb-btn.active {
+    border-color: var(--accent-orange);
+    background: rgba(255, 122, 69, 0.25);
+    color: var(--accent-orange);
+    box-shadow: 0 0 8px rgba(255, 122, 69, 0.45);
   }
   .ability-btn:disabled {
     opacity: 0.35;
@@ -216,8 +236,23 @@
   .ability-badge {
     background: rgba(255,255,255,0.12);
     border-radius: 8px;
-    padding: 1px 4px;
-    font-size: 9.5px;
+    padding: 0 3px;
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  /* Bomb target range highlight */
+  .cell.bomb-target {
+    background: rgba(255, 122, 69, 0.42) !important;
+    outline: 1.5px solid var(--accent-orange);
+    outline-offset: -1.5px;
+  }
+
+  /* Narrow phones: keep the status bar on one line */
+  @media (max-width: 359px) {
+    .gauge-label { display: none; }
+    .ability-btn { font-size: 9.5px; padding: 2px 3.5px; }
+    .ability-badge { font-size: 8.5px; padding: 0 2.5px; }
   }
 
   /* Board Section: Strict height control (min 200px, max 280px) */
@@ -587,7 +622,7 @@
       <div class="title-group">
         <span style="font-size: 18px;">🍁</span>
         <span class="game-title">규다미 전용 뫄뫄💜</span>
-        <span style="font-size: 10px; background: rgba(167,139,250,0.22); color: #c4b5fd; padding: 1.5px 5px; border-radius: 4px; font-weight: 800; margin-left: 2px;">v2.4</span>
+        <span style="font-size: 10px; background: rgba(167,139,250,0.22); color: #c4b5fd; padding: 1.5px 5px; border-radius: 4px; font-weight: 800; margin-left: 2px;">v2.5</span>
       </div>
 
       <div class="score-badge-group">
@@ -608,7 +643,7 @@
     <div class="status-bar">
       <div class="stage-tag" id="stageDisplay">1단계</div>
       <div class="gauge-wrap" title="7회 배치 시 능력 생성">
-        <span style="font-size: 9.5px; color: var(--text-sub);">충전:</span>
+        <span class="gauge-label">충전</span>
         <div class="gauge-dot"></div>
         <div class="gauge-dot"></div>
         <div class="gauge-dot"></div>
@@ -618,13 +653,17 @@
         <div class="gauge-dot"></div>
       </div>
       <div class="abilities-wrap">
-        <button class="ability-btn" id="btnDot">
-          <span>🔴 점 찍기</span>
+        <button class="ability-btn" id="btnDot" title="빈 칸에 점 하나 채우기">
+          <span>🔴 점</span>
           <span class="ability-badge" id="badgeDot">0/7</span>
         </button>
-        <button class="ability-btn" id="btnReroll">
-          <span>🎲 바꿔 뽑기</span>
+        <button class="ability-btn" id="btnReroll" title="조각 하나 바꿔 뽑기">
+          <span>🎲 교체</span>
           <span class="ability-badge" id="badgeReroll">0/7</span>
+        </button>
+        <button class="ability-btn bomb-btn" id="btnBomb" title="3×3 범위 제거 (1판당 1번)">
+          <span>💣 폭탄</span>
+          <span class="ability-badge" id="badgeBomb">1/1</span>
         </button>
       </div>
     </div>
@@ -774,6 +813,11 @@
     playTone(600, 'sine', 0.1, 0.15);
     setTimeout(() => playTone(900, 'sine', 0.15, 0.15), 80);
   }
+  function sfxBomb() {
+    playTone(180, 'sawtooth', 0.16, 0.22);
+    setTimeout(() => playTone(110, 'square', 0.22, 0.2), 70);
+    setTimeout(() => playTone(70, 'sawtooth', 0.3, 0.18), 160);
+  }
   function sfxReplenish() {
     playTone(400, 'sine', 0.08, 0.15);
     setTimeout(() => playTone(600, 'sine', 0.1, 0.18), 80);
@@ -845,8 +889,8 @@
   let placedCount = 0;
   let gamesPlayed = 0;
 
-  let abilities = { dot: 0, reroll: 0 };
-  let currentMode = null; // 'DOT_MODE', 'REROLL_MODE', null
+  let abilities = { dot: 0, reroll: 0, bomb: 1 };
+  let currentMode = null; // 'DOT_MODE', 'REROLL_MODE', 'BOMB_MODE', null
   let isClearing = false;
 
   let trayPieces = [null, null, null];
@@ -867,6 +911,8 @@
   const badgeDot = document.getElementById('badgeDot');
   const btnReroll = document.getElementById('btnReroll');
   const badgeReroll = document.getElementById('badgeReroll');
+  const btnBomb = document.getElementById('btnBomb');
+  const badgeBomb = document.getElementById('badgeBomb');
 
   const btnSound = document.getElementById('btnSound');
   const btnRestart = document.getElementById('btnRestart');
@@ -1335,17 +1381,24 @@
 
     badgeDot.textContent = `${abilities.dot}/7`;
     badgeReroll.textContent = `${abilities.reroll}/7`;
+    badgeBomb.textContent = `${abilities.bomb}/1`;
 
     btnDot.disabled = abilities.dot <= 0;
     btnReroll.disabled = abilities.reroll <= 0;
+    btnBomb.disabled = abilities.bomb <= 0;
 
     btnDot.classList.toggle('active', currentMode === 'DOT_MODE');
     btnReroll.classList.toggle('active', currentMode === 'REROLL_MODE');
+    btnBomb.classList.toggle('active', currentMode === 'BOMB_MODE');
+
+    if (currentMode !== 'BOMB_MODE') clearBombHighlight();
 
     if (currentMode === 'DOT_MODE') {
       guideHint.textContent = '🔴 보드에서 채우고 싶은 빈 칸을 터치하세요!';
     } else if (currentMode === 'REROLL_MODE') {
       guideHint.textContent = '🎲 아래에서 바꿀 조각을 하나 터치하세요!';
+    } else if (currentMode === 'BOMB_MODE') {
+      guideHint.textContent = '💣 폭탄 선택됨! 제거할 3×3 중심 칸을 터치하세요.';
     } else if (selectedSlot !== null && trayPieces[selectedSlot] !== null) {
       guideHint.textContent = `📍 [${trayPieces[selectedSlot].def.name}] 선택됨! 보드 빈 칸을 터치해 배치하세요.`;
     } else {
@@ -1601,6 +1654,80 @@
     }
   }
 
+  /* --- 💣 Bomb Item: clears a 3×3 area around the tapped cell (once per game) --- */
+  let bombHighlightCells = [];
+
+  function clearBombHighlight() {
+    bombHighlightCells.forEach(({ r, c }) => {
+      const cell = boardEl.children[r * BOARD_COLS + c];
+      if (cell) cell.classList.remove('bomb-target');
+    });
+    bombHighlightCells = [];
+  }
+
+  function showBombHighlight(r, c) {
+    clearBombHighlight();
+    for (let rr = Math.max(0, r - 1); rr <= Math.min(BOARD_ROWS - 1, r + 1); rr++) {
+      for (let cc = Math.max(0, c - 1); cc <= Math.min(BOARD_COLS - 1, c + 1); cc++) {
+        const cell = boardEl.children[rr * BOARD_COLS + cc];
+        if (cell) {
+          cell.classList.add('bomb-target');
+          bombHighlightCells.push({ r: rr, c: cc });
+        }
+      }
+    }
+  }
+
+  function getBombTargets(r, c) {
+    const targets = [];
+    for (let rr = Math.max(0, r - 1); rr <= Math.min(BOARD_ROWS - 1, r + 1); rr++) {
+      for (let cc = Math.max(0, c - 1); cc <= Math.min(BOARD_COLS - 1, c + 1); cc++) {
+        if (board[rr][cc] !== null) targets.push({ r: rr, c: cc });
+      }
+    }
+    return targets;
+  }
+
+  function useBombAt(r, c) {
+    if (isClearing || abilities.bomb <= 0) return;
+
+    const targets = getBombTargets(r, c);
+
+    if (targets.length === 0) {
+      boardEl.classList.remove('shake');
+      void boardEl.offsetWidth;
+      boardEl.classList.add('shake');
+      guideHint.textContent = '주변 3×3 범위에 지울 블록이 없어요!';
+      setTimeout(() => updateHeaderAndGuide(), 1400);
+      return;
+    }
+
+    abilities.bomb = 0;
+    currentMode = null;
+    isClearing = true;
+    clearBombHighlight();
+    sfxBomb();
+
+    targets.forEach(({ r: tr, c: tc }) => {
+      const cell = boardEl.children[tr * BOARD_COLS + tc];
+      if (cell) cell.classList.add('line-clearing');
+    });
+
+    const centerR = r;
+    const centerC = c;
+
+    setTimeout(() => {
+      targets.forEach(({ r: tr, c: tc }) => {
+        board[tr][tc] = null;
+      });
+      isClearing = false;
+      addScore(targets.length * 20, centerR, centerC);
+      renderBoard();
+      updateHeaderAndGuide();
+      checkGameOver();
+    }, 280);
+  }
+
   function addScore(pts, row, col) {
     score = Math.min(score + pts, 500000);
     if (score > highScore) {
@@ -1650,7 +1777,7 @@
     }
 
     if (!canPlaceAny) {
-      if (abilities.dot > 0 || abilities.reroll > 0) return;
+      if (abilities.dot > 0 || abilities.reroll > 0 || abilities.bomb > 0) return;
 
       sfxGameOver();
       gamesPlayed++;
@@ -1684,7 +1811,7 @@
     totalLines = 0;
     placedCount = 0;
     lastKnownStage = 1;
-    abilities = { dot: 0, reroll: 0 };
+    abilities = { dot: 0, reroll: 0, bomb: 1 };
     currentMode = null;
     isClearing = false;
 
@@ -1705,6 +1832,11 @@
     lastHandledTime = now;
 
     initAudio();
+    if (currentMode === 'BOMB_MODE') {
+      useBombAt(r, c);
+      return;
+    }
+
     if (currentMode === 'DOT_MODE') {
       useDotOnCell(r, c);
       return;
@@ -1740,15 +1872,21 @@
     const cell = e.target.closest('.cell');
     if (!cell) {
       clearGhost();
+      if (currentMode === 'BOMB_MODE') clearBombHighlight();
       return;
     }
     const r = parseInt(cell.dataset.r, 10);
     const c = parseInt(cell.dataset.c, 10);
+    if (currentMode === 'BOMB_MODE') {
+      showBombHighlight(r, c);
+      return;
+    }
     showGhost(r, c);
   });
 
   boardEl.addEventListener('pointerleave', () => {
     if (!activeDrag || !activeDrag.hasMoved) clearGhost();
+    if (currentMode === 'BOMB_MODE') clearBombHighlight();
   });
 
   /* Ability Buttons */
@@ -1757,6 +1895,7 @@
     if (abilities.dot <= 0) return;
     currentMode = currentMode === 'DOT_MODE' ? null : 'DOT_MODE';
     clearGhost();
+    clearBombHighlight();
     updateHeaderAndGuide();
   });
 
@@ -1765,6 +1904,16 @@
     if (abilities.reroll <= 0) return;
     currentMode = currentMode === 'REROLL_MODE' ? null : 'REROLL_MODE';
     clearGhost();
+    clearBombHighlight();
+    updateHeaderAndGuide();
+  });
+
+  btnBomb.addEventListener('click', () => {
+    initAudio();
+    if (abilities.bomb <= 0) return;
+    currentMode = currentMode === 'BOMB_MODE' ? null : 'BOMB_MODE';
+    clearGhost();
+    if (currentMode !== 'BOMB_MODE') clearBombHighlight();
     updateHeaderAndGuide();
   });
 
