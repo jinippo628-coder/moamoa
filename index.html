@@ -243,16 +243,15 @@
 
   /* Bomb target range highlight (4×4 preview follows the finger / mouse) */
   .cell.bomb-target {
-    background: rgba(255, 88, 60, 0.55) !important;
+    background: rgba(255, 88, 60, 0.38) !important;
     outline: 2px solid #ff5a3c;
     outline-offset: -2px;
-    box-shadow: inset 0 0 8px rgba(255, 196, 128, 0.85), 0 0 6px rgba(255, 90, 60, 0.7);
     z-index: 2;
     animation: bombTargetPulse 0.9s ease-in-out infinite;
   }
   @keyframes bombTargetPulse {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.45); }
+    0%, 100% { box-shadow: inset 0 0 6px rgba(255, 150, 90, 0.55), 0 0 3px rgba(255, 90, 60, 0.45); }
+    50% { box-shadow: inset 0 0 12px rgba(255, 196, 128, 0.95), 0 0 8px rgba(255, 90, 60, 0.75); }
   }
   .board-grid.bomb-aiming {
     touch-action: none;
@@ -1738,7 +1737,34 @@
 
   /* 터치 조준 상태 (손 떼면 이 좌표에서 발동) */
   let bombTouch = null;
-  let bombTouchGuardUntil = 0;
+
+  /* 터치로 처리한 직후 따라오는 합성 pointerup/click만 한 번씩 삼킨다 (중복 발동 방지) */
+  let bombSuppressTouchPointerUp = false;
+  let bombSuppressNextClick = false;
+  let bombSuppressTimer = null;
+
+  function armBombInputSuppression() {
+    bombSuppressTouchPointerUp = true;
+    bombSuppressNextClick = true;
+    clearTimeout(bombSuppressTimer);
+    bombSuppressTimer = setTimeout(() => {
+      bombSuppressTouchPointerUp = false;
+      bombSuppressNextClick = false;
+    }, 700);
+  }
+
+  function consumeBombInputSuppression(kind) {
+    if (kind === 'pointerup') {
+      if (!bombSuppressTouchPointerUp) return false;
+      bombSuppressTouchPointerUp = false;
+      return true;
+    }
+    if (!bombSuppressNextClick) return false;
+    bombSuppressNextClick = false;
+    bombSuppressTouchPointerUp = false;
+    clearTimeout(bombSuppressTimer);
+    return true;
+  }
 
   function useBombAt(r, c) {
     if (isClearing || abilities.bomb <= 0) return;
@@ -1868,7 +1894,8 @@
     currentMode = null;
     isClearing = false;
     bombTouch = null;
-    bombTouchGuardUntil = 0;
+    bombSuppressTouchPointerUp = false;
+    bombSuppressNextClick = false;
 
     trayPieces = [getRandomPiece(), getRandomPiece(), getRandomPiece()];
     selectedSlot = 0;
@@ -1906,8 +1933,8 @@
   }
 
   boardEl.addEventListener('click', (e) => {
-    // 터치로 이미 처리한 직후의 합성 click은 무시 (중복 발동 방지)
-    if (Date.now() < bombTouchGuardUntil) return;
+    // 터치로 이미 처리한 직후의 합성 click은 한 번만 무시 (중복 발동 방지)
+    if (consumeBombInputSuppression('click')) return;
     const cell = e.target.closest('.cell');
     if (!cell) return;
     const r = parseInt(cell.dataset.r, 10);
@@ -1918,7 +1945,7 @@
   boardEl.addEventListener('pointerup', (e) => {
     if (activeDrag && activeDrag.hasMoved) return;
     // 폭탄 터치 조준은 touchend가 담당 — pointerup으로 한 번 더 터지지 않게 건너뛰기
-    if ((currentMode === 'BOMB_MODE' && e.pointerType === 'touch') || Date.now() < bombTouchGuardUntil) return;
+    if (e.pointerType === 'touch' && (currentMode === 'BOMB_MODE' || consumeBombInputSuppression('pointerup'))) return;
     const cell = e.target.closest('.cell');
     if (!cell) return;
     const r = parseInt(cell.dataset.r, 10);
@@ -1961,7 +1988,6 @@
     if (currentMode !== 'BOMB_MODE' || e.touches.length > 1) return;
     const t = e.touches[0];
     e.preventDefault(); // 화면 스크롤·합성 click 방지
-    bombTouchGuardUntil = Date.now() + 800;
     const pos = setBombAimAt(t.clientX, t.clientY, bombTouchLift());
     bombTouch = { id: t.identifier, r: pos ? pos.r : null, c: pos ? pos.c : null };
   }, { passive: false });
@@ -1981,7 +2007,7 @@
     const t = Array.from(e.changedTouches).find(x => x.identifier === bombTouch.id);
     if (!t) return;
     e.preventDefault();
-    bombTouchGuardUntil = Date.now() + 800;
+    armBombInputSuppression();
     const aim = bombTouch;
     bombTouch = null;
     clearBombHighlight();
